@@ -20,7 +20,69 @@
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  /* background: var(--background);
+  color: var(--foreground); */
   font-family: Arial, Helvetica, sans-serif;
+}
+
+
+
+@media (max-width: 399px) {
+  .flex-nav {
+    align-items: flex-end;
+  }
+}
+
+
+
+@media (max-width: 1230px) {
+  .media-coloumn {
+    columns: 4;
+  }
+}
+@media (max-width: 1011px) {
+  .media-coloumn {
+    columns: 3;
+  }
+}
+@media (max-width: 768px) {
+  .side-nav {
+    width: 200px;
+  }
+  .media-coloumn {
+    columns: 2;
+  }
+}
+@media (max-width: 550px) {
+  .media-coloumn {
+    columns: 1;
+  }
+  .side-nav {
+    width: 300px;
+  }
+  
+}
+@media (max-width: 582px) {
+  
+  .media-width{
+    max-width: 20rem; /* 24rem = 384px */;
+  }
+  
+}
+@media (max-width: 435px) {
+ 
+  .side-nav {
+    width: 230px;
+  }
+
+  .media-width{
+    max-width: 230px; /* 24rem = 384px */;
+    
+
+  }
+
+  .media-space{
+   gap: 5px; /* Equivalent to space-x-4 in Tailwind CSS */
+  }
+  
 }
