@@ -27,6 +27,7 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt", // ✅ Important: switch to JWT
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
+  debug:true,
   secret: process.env.NEXTAUTH_SECRET, // ✅ Required for JWT sessions
 
   callbacks: {

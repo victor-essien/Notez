@@ -1,13 +1,6 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
-
 
 datasource db {
   provider = "postgresql"
@@ -49,45 +42,36 @@ model VerificationToken {
 }
 
 model User {
-  // This model represents a user in the application
   id            String    @id @default(cuid())
   name          String?
   email         String?   @unique
   password      String?
   image         String?
   emailVerified DateTime?
-  notes         Note[]
-  accounts      Account[]
-  sessions      Session[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  notes         Note[]
+  sessions      Session[]
 }
 
-// Schema for Label
-// This model represents a label that can be associated with notes
 model Label {
   id        String   @id @default(cuid())
   name      String?
-  notes     Note[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  notes     Note[]
 }
 
-// Schema for Reminder
-// This model represents a reminder associated with a note
-// It includes a reference to the note it belongs to, the date and time of the reminder,
 model Reminder {
   id        String   @id @default(cuid())
   noteId    String?
-  note      Note?    @relation(fields: [noteId], references: [id])
   dateTime  DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  note      Note?    @relation(fields: [noteId], references: [id])
 }
 
-// Schema for Note
-// This model represents a note in the application
-// It includes fields for the note's title, content, image URL, and various flags
 model Note {
   id         String     @id @default(cuid())
   title      String?
@@ -97,10 +81,10 @@ model Note {
   isArchived Boolean    @default(false)
   isDeleted  Boolean    @default(false)
   userId     String
-  user       User       @relation(fields: [userId], references: [id])
   labelId    String?
-  reminders  Reminder[]
-  label      Label?     @relation(fields: [labelId], references: [id])
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
+  label      Label?     @relation(fields: [labelId], references: [id])
+  user       User       @relation(fields: [userId], references: [id])
+  reminders  Reminder[]
 }
