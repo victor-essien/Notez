@@ -25,7 +25,10 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt", // ✅ Important: switch to JWT
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 365 * 24 * 60 * 60, // 30 days
+  },
+  jwt: {
+    maxAge: 365 * 24 * 60 * 60, // Set token expiration to 1 year (in seconds)
   },
   debug:true,
   secret: process.env.NEXTAUTH_SECRET, // ✅ Required for JWT sessions
@@ -51,7 +54,7 @@ export const authOptions: NextAuthOptions = {
       }
       return token;
     },
-  },
+  }
 };
 
 const handler = NextAuth(authOptions);

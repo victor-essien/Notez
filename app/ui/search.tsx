@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
 export default function Search() {
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Check screen size on mount and on resize
   useEffect(() => {
     const handleResize = () => {
-      setIsLargeScreen(window.innerWidth >= 768);
+      setIsLargeScreen(window.innerWidth >= 768); // Medium breakpoint (768px)
     };
 
     // Run on mount
@@ -23,35 +24,56 @@ export default function Search() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Search query:", searchQuery);
+    // Add your search logic here
+  };
+
   return (
     <div className="relative flex items-center w-full md:w-auto">
-      {/* Search Icon for Small and Medium Screens */}
-      {!isLargeScreen && (
+      {/* Search Icon for Small Screens */}
+      {!isLargeScreen && !isSearchVisible && (
         <button
-          className="md:hidden p-2"
-          onClick={() => setIsSearchVisible(!isSearchVisible)}
-          aria-label="Toggle Search"
+          className="p-2"
+          onClick={() => setIsSearchVisible(true)}
+          aria-label="Open Search"
         >
-          <MagnifyingGlassIcon className="w-6 h-6 text-gray-500" />
+          <MagnifyingGlassIcon className="w-6 h-6 text-white cursor-pointer" />
         </button>
       )}
 
       {/* Search Bar */}
       {(isSearchVisible || isLargeScreen) && (
-        <div className="relative flex w-full bg-gray-100 md:w-auto">
+        <form
+          onSubmit={handleSearch}
+          className="relative flex items-center w-full md:w-auto"
+        >
           <label htmlFor="search" className="sr-only">
             Search
           </label>
           <input
             id="search"
             type="text"
-            className="block w-full rounded-md border py-[9px] px-96 pl-10 text-sm outline-2 placeholder:text-black"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="block w-full md:w-96 rounded-md border border-gray-300 bg-gray-100 py-2 pl-10 pr-10 text-sm text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             placeholder="Search..."
           />
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-            <MagnifyingGlassIcon className="w-6 h-6 text-gray-500" />
+            <MagnifyingGlassIcon className="w-5 h-5 text-gray-500" />
           </div>
-        </div>
+          {isSearchVisible && !isLargeScreen && (
+            <button
+              type="button"
+              onClick={() => setIsSearchVisible(false)}
+              className="absolute inset-y-0 right-0 flex items-center pr-3"
+              aria-label="Close Search"
+            >
+              <XMarkIcon className="w-5 h-5 text-gray-500" />
+            </button>
+          )}
+        </form>
       )}
     </div>
   );

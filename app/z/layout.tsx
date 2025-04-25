@@ -15,11 +15,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <SideNavProvider>
         <div className="flex  flex-col ">
           {/* TopBar */}
-          <div className="flex-none border-b border-gray-300 fixed w-full z-10">
+          <div className="flex-none border-b border-gray-300 fixed w-full z-50 bg-gray-900">
             <TopNav />
           </div>
           {/* Main Content */}
-          <div className="flex flex-grow flex-col md:flex-row  bg-gray-900 ">
+          <div className="flex flex-grow flex-col md:flex-row min-h-screen bg-gray-900 ">
             {/* SideNav */}
             <div className="flex-none  fixed top-[64px] h-[calc(100vh-64px)]">
               <SideNav />

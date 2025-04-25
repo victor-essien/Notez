@@ -1,7 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
   reactStrictMode: true,
   experimental: {
     //    appDir: true, // Removed as it is not recognized in ExperimentalConfig
@@ -16,8 +15,9 @@ const nextConfig: NextConfig = {
     // !! WARN !!
     ignoreBuildErrors: true,
   },
+  images: {
+    domains: ["lh3.googleusercontent.com"], // Add the external domain here
+  },
 };
-// next.config.js
-
 
 export default nextConfig;

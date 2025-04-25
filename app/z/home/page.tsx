@@ -254,7 +254,7 @@ export default function Page() {
     fetchNotes();
   }, []);
   return (
-    <div className="flex flex-col items-center flex-nav lg:items-center mt-9">
+    <div className="flex flex-col items-center  lg:items-center mt-9">
       <input
         type="text"
         placeholder="Take a note..."

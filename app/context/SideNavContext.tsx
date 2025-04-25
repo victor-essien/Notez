@@ -10,6 +10,7 @@ const SideNavContext = createContext<SideNavContextType | undefined>(undefined)
 
 export function SideNavProvider ({children} : {children: React.ReactNode}) {
     const [isSideNavOpen, setIsSideNavOpen] = useState(false)
+    console.log("iswhattt", isSideNavOpen)
 
     return(
         <SideNavContext.Provider value={{isSideNavOpen, setIsSideNavOpen}}>
