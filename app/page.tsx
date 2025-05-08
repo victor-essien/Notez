@@ -15,7 +15,7 @@
 //       </p>
 //       <div className="flex space-x-4">
 //         <button
-//           onClick={() => signIn("google", { callbackUrl: "/z/home" })}
+//           onClick={() => signIn("google", { 300lbackUrl: "/z/home" })}
 //           className="px-6 py-3 bg-white text-purple-500 font-semibold rounded-lg shadow-md hover:bg-gray-100"
 //         >
 //           Get Started

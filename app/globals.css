@@ -42,7 +42,7 @@ body {
 }
 @media (max-width: 1011px) {
   .media-coloumn {
-    columns: 3;
+    columns: 4;
   }
 }
 @media (max-width: 768px) {
@@ -53,10 +53,10 @@ body {
     columns: 2;
   }
 }
-@media (min-width: 680px) {
+@media (min-width: 680px) and (max-width: 784px) {
   
   .media-coloumn {
-    columns: 3;
+  columns: 3;
   }
 }
 @media (max-width: 550px) {

@@ -3,7 +3,11 @@
 import { useState, useEffect } from "react";
 import { MagnifyingGlassIcon, XMarkIcon } from "@heroicons/react/24/outline";
 
-export default function Search() {
+interface SearchProps {
+  onSearchToggle?: (visible: boolean) => void;
+}
+
+export default function Search({ onSearchToggle }: SearchProps) {
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [isLargeScreen, setIsLargeScreen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -30,13 +34,20 @@ export default function Search() {
     // Add your search logic here
   };
 
+  const toggleSearchVisibility = (visible: boolean) => {
+    setIsSearchVisible(visible);
+    if (onSearchToggle) {
+      onSearchToggle(visible);
+    }
+  };
+
   return (
     <div className="relative flex items-center w-full md:w-auto">
       {/* Search Icon for Small Screens */}
       {!isLargeScreen && !isSearchVisible && (
         <button
           className="p-2"
-          onClick={() => setIsSearchVisible(true)}
+          onClick={() => toggleSearchVisibility(true)}
           aria-label="Open Search"
         >
           <MagnifyingGlassIcon className="w-6 h-6 text-white cursor-pointer" />
@@ -66,7 +77,7 @@ export default function Search() {
           {isSearchVisible && !isLargeScreen && (
             <button
               type="button"
-              onClick={() => setIsSearchVisible(false)}
+              onClick={() => toggleSearchVisibility(false)}
               className="absolute inset-y-0 right-0 flex items-center pr-3"
               aria-label="Close Search"
             >
