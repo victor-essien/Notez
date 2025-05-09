@@ -32,8 +32,9 @@ export default function TopNav() {
               Menu
             </span>
           </div>
-          <div className="flex flex-row gap-12">
+          <div className="flex flex-row gap-30">
             <Logo />
+            <Search />
           </div>
         </div>
       )}

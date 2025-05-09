@@ -1,7 +1,6 @@
 "use client";
 
 import { useRef, useEffect, useState } from "react";
-// import notes from "@/app/lib/placeholder-data";
 import { createNote } from "@/app/lib/prisma";
 import { useSession } from "next-auth/react";
 import { getServerSession } from "next-auth";
@@ -14,13 +13,13 @@ import {
   UserPlusIcon,
   PhotoIcon,
   EllipsisHorizontalIcon,
-  ArrowPathIcon,
   ArrowUturnLeftIcon,
   TrashIcon,
 } from "@heroicons/react/24/outline";
 import SkeletonLoader from "@/app/ui/skeleton";
 import { MapPinIcon } from "@heroicons/react/24/outline";
-import { on } from "events";
+import { DndProvider, useDrag, useDrop } from "react-dnd";
+import { TouchBackend } from "react-dnd-touch-backend";
 
 interface Note {
   id: string;
@@ -29,6 +28,7 @@ interface Note {
   imageUrl?: string;
   createdAt: string;
 }
+
 // Define NoteCard as a standalone component
 function NoteCard({ onClose }: { onClose: () => void }) {
   const [note, setNote] = useState("");
@@ -226,6 +226,84 @@ function NoteCard({ onClose }: { onClose: () => void }) {
   );
 }
 
+interface DraggableNoteProps {
+  note: Note;
+  index: number;
+  moveNote: (dragIndex: number, hoverIndex: number) => void;
+}
+
+function DraggableNote({ note, index, moveNote }: DraggableNoteProps) {
+  const ref = useRef<HTMLDivElement>(null);
+
+  const [, drop] = useDrop({
+    accept: "note",
+    hover: (item: {
+      index: number;
+      clientOffset?: { x: number; y: number };
+    }) => {
+      if (!ref.current) return;
+
+      const dragIndex = item.index;
+      const hoverIndex = index;
+
+      if (dragIndex === hoverIndex) return;
+
+      // Get the bounding rectangle of the hovered element
+      const hoverBoundingRect = ref.current.getBoundingClientRect();
+
+      // Get the vertical middle of the hovered element
+      const hoverMiddleY =
+        (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
+
+      // Get the mouse position
+      const clientOffset = item.clientOffset || { x: 0, y: 0 };
+
+      // Calculate the mouse position relative to the hovered element
+      const hoverClientY = clientOffset.y - hoverBoundingRect.top;
+
+      // Only move when the mouse has crossed half of the hovered element
+      if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) return;
+      if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) return;
+
+      moveNote(dragIndex, hoverIndex);
+      item.index = hoverIndex;
+    },
+    drop: (item: { index: number }) => {
+      const dragIndex = item.index;
+      const hoverIndex = index;
+
+      if (dragIndex !== hoverIndex) {
+        moveNote(dragIndex, hoverIndex);
+      }
+    },
+  });
+
+  const [{ isDragging }, drag] = useDrag({
+    type: "note",
+    item: { index },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  drag(drop(ref));
+
+  return (
+    <div
+      ref={ref}
+      onMouseDown={(e) => e.preventDefault()} // Prevent text selection on drag
+      className={`p-4 border text-white pt-9 border-gray-300 rounded-md side-nav md:w-48 lg:w-48 text-center break-inside-avoid mb-4 bg-gray-900 ${
+        isDragging ? "opacity-50" : "opacity-100"
+      }`}
+    >
+      <div >
+        <h3 className="text-lg font-semibold">{note.title}</h3>
+        <p className="text-sm text-gray-600">{note.content}</p>
+      </div>
+    </div>
+  );
+}
+
 // Main Page Component
 export default function Page() {
   const [noteInput, setNoteInput] = useState("");
@@ -233,10 +311,6 @@ export default function Page() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [loading, setLoading] = useState(true);
   const { data: session, status } = useSession();
-  console.log("frompage", showNoteCard);
-  // const { data: session, status } = useSession();
-  console.log("session", session);
-  // console.log(session?.user?.email);
 
   useEffect(() => {
     async function fetchNotes() {
@@ -253,35 +327,41 @@ export default function Page() {
 
     fetchNotes();
   }, []);
-  return (
-    <div className="flex flex-col items-center  lg:items-center mt-9">
-      <input
-        type="text"
-        placeholder="Take a note..."
-        value={noteInput}
-        onClick={() => setShowNoteCard(true)} // Show NoteCard on click
-        onChange={(e) => setNoteInput(e.target.value)}
-        className={`p-2 w-66 lg:w-96 text-white rounded border border-gray-300 mb-5 ${
-          showNoteCard ? "hidden" : "block"
-        } bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
-      />
 
-      {showNoteCard && (
-        <NoteCard onClose={() => setShowNoteCard(false)} /> // Pass onClose handler
-      )}
-      <div className="columns-1 md:columns-2 lg:columns-5 media-coloumn">
-        {notes.map((note, index) => (
-          <div
-            key={index}
-            className="p-4 border text-white pt-9 border-gray-300 rounded-md side-nav md:w-48 lg:w-48 text-center break-inside-avoid mb-4 bg-gray-900"
-          >
-            <div>
-              <h3 className="text-lg font-semibold">{note.title}</h3>
-              <p className="text-sm text-gray-600">{note.content}</p>
-            </div>
-          </div>
-        ))}
+  const moveNote = (dragIndex: number, hoverIndex: number) => {
+    const updatedNotes = [...notes];
+    const [draggedNote] = updatedNotes.splice(dragIndex, 1);
+    updatedNotes.splice(hoverIndex, 0, draggedNote);
+    setNotes(updatedNotes);
+  };
+
+  return (
+    <DndProvider backend={TouchBackend} options={{ enableMouseEvents: true }}>
+      <div className="flex flex-col items-center lg:items-center mt-9">
+        <input
+          type="text"
+          placeholder="Take a note..."
+          value={noteInput}
+          onClick={() => setShowNoteCard(true)}
+          onChange={(e) => setNoteInput(e.target.value)}
+          className={`p-2 w-66 lg:w-96 text-white rounded border border-gray-300 mb-5 ${
+            showNoteCard ? "hidden" : "block"
+          } bg-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500`}
+        />
+
+        {showNoteCard && <NoteCard onClose={() => setShowNoteCard(false)} />}
+
+        <div className="columns-1 md:columns-2 lg:columns-5 media-coloumn">
+          {notes?.map((note, index) => (
+            <DraggableNote
+              key={note.id}
+              note={note}
+              index={index}
+              moveNote={moveNote}
+            />
+          ))}
+        </div>
       </div>
-    </div>
+    </DndProvider>
   );
 }

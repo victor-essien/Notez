@@ -50,7 +50,7 @@ export default function Search({ onSearchToggle }: SearchProps) {
           onClick={() => toggleSearchVisibility(true)}
           aria-label="Open Search"
         >
-          <MagnifyingGlassIcon className="w-6 h-6 text-white cursor-pointer" />
+          <MagnifyingGlassIcon className="w-6 h-6 text-white  cursor-pointer" />
         </button>
       )}
 
