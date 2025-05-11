@@ -34,7 +34,10 @@ export default function TopNav() {
           </div>
           <div className="flex flex-row gap-30">
             <Logo />
-            <Search />
+          <div className="hidden lg:block md:block">
+          <Search />
+          </div>
+
           </div>
         </div>
       )}
@@ -68,16 +71,16 @@ export default function TopNav() {
               </span>
             </div>
             <div className="relative group">
-              <div className="h-10 w-10 rounded-full overflow-hidden">
+              <div className="h-9 w-9 rounded-full overflow-hidden">
                 <Image
                   src={session?.user?.image || "/default-avatar.png"}
                   alt="User Avatar"
-                  width={48}
-                  height={48}
+                  width={40}
+                  height={40}
                   className="object-cover"
                 />
               </div>
-              <span className="absolute top-full left-1/2 transform -translate-x-1/2 mt-1 text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded opacity-0 group-hover:opacity-100 text-center whitespace-nowrap">
+              <span className="absolute  top-full left-0 transform -translate-x-2/2 mt-1 text-xs text-gray-400 bg-gray-800 px-2 py-1 rounded opacity-0 group-hover:opacity-100 text-center whitespace-nowrap">
                 {session?.user?.name || "User Name"} <br />
                 {session?.user?.email || "User Email"}
               </span>

@@ -234,36 +234,17 @@ interface DraggableNoteProps {
 
 function DraggableNote({ note, index, moveNote }: DraggableNoteProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const [isLongPress, setIsLongPress] = useState(false);
 
   const [, drop] = useDrop({
     accept: "note",
-    hover: (item: {
-      index: number;
-      clientOffset?: { x: number; y: number };
-    }) => {
+    hover: (item: { index: number }) => {
       if (!ref.current) return;
 
       const dragIndex = item.index;
       const hoverIndex = index;
 
       if (dragIndex === hoverIndex) return;
-
-      // Get the bounding rectangle of the hovered element
-      const hoverBoundingRect = ref.current.getBoundingClientRect();
-
-      // Get the vertical middle of the hovered element
-      const hoverMiddleY =
-        (hoverBoundingRect.bottom - hoverBoundingRect.top) / 2;
-
-      // Get the mouse position
-      const clientOffset = item.clientOffset || { x: 0, y: 0 };
-
-      // Calculate the mouse position relative to the hovered element
-      const hoverClientY = clientOffset.y - hoverBoundingRect.top;
-
-      // Only move when the mouse has crossed half of the hovered element
-      if (dragIndex < hoverIndex && hoverClientY < hoverMiddleY) return;
-      if (dragIndex > hoverIndex && hoverClientY > hoverMiddleY) return;
 
       moveNote(dragIndex, hoverIndex);
       item.index = hoverIndex;
@@ -286,17 +267,31 @@ function DraggableNote({ note, index, moveNote }: DraggableNoteProps) {
     }),
   });
 
+  const handleLongPressStart = () => {
+    setIsLongPress(true);
+  };
+
+  const handleLongPressEnd = () => {
+    setIsLongPress(false);
+  };
+
   drag(drop(ref));
 
   return (
     <div
       ref={ref}
       onMouseDown={(e) => e.preventDefault()} // Prevent text selection on drag
+      onTouchStart={() => setTimeout(handleLongPressStart, 500)} // Trigger long press after 500ms
+      onTouchEnd={handleLongPressEnd} // Reset long press state on touch end
       className={`p-4 border text-white pt-9 border-gray-300 rounded-md side-nav md:w-48 lg:w-48 text-center break-inside-avoid mb-4 bg-gray-900 ${
-        isDragging ? "opacity-50" : "opacity-100"
+        isDragging
+          ? "opacity-50 border-dashed border-blue-500 scale-105 shadow-lg"
+          : isLongPress
+          ? "border-dashed border-yellow-500"
+          : "opacity-100"
       }`}
     >
-      <div >
+      <div>
         <h3 className="text-lg font-semibold">{note.title}</h3>
         <p className="text-sm text-gray-600">{note.content}</p>
       </div>
@@ -308,8 +303,9 @@ function DraggableNote({ note, index, moveNote }: DraggableNoteProps) {
 export default function Page() {
   const [noteInput, setNoteInput] = useState("");
   const [showNoteCard, setShowNoteCard] = useState(false);
-  const [notes, setNotes] = useState<Note[]>([]);
+  const [notes, setNotes] = useState<Note[] | null>(null); // Allow null for initial state
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { data: session, status } = useSession();
 
   useEffect(() => {
@@ -317,9 +313,16 @@ export default function Page() {
       try {
         const res = await fetch("/api/notes");
         const data = await res.json();
-        setNotes(data);
+
+        if (Array.isArray(data)) {
+          setNotes(data);
+        } else {
+          throw new Error("Invalid data format");
+        }
       } catch (error) {
         console.error("Error fetching notes:", error);
+        setError("Failed to load notes. Please try again later.");
+        setNotes([]); // Set to an empty array to avoid runtime errors
       } finally {
         setLoading(false);
       }
@@ -328,12 +331,13 @@ export default function Page() {
     fetchNotes();
   }, []);
 
-  const moveNote = (dragIndex: number, hoverIndex: number) => {
-    const updatedNotes = [...notes];
-    const [draggedNote] = updatedNotes.splice(dragIndex, 1);
-    updatedNotes.splice(hoverIndex, 0, draggedNote);
-    setNotes(updatedNotes);
-  };
+  if (loading) {
+    return <SkeletonLoader />; // Show loading skeleton while notes are loading
+  }
+
+  if (error) {
+    <div className="text-red-500 text-center">{error}</div>; // Show error message if there's an error
+  }
 
   return (
     <DndProvider backend={TouchBackend} options={{ enableMouseEvents: true }}>
@@ -357,7 +361,12 @@ export default function Page() {
               key={note.id}
               note={note}
               index={index}
-              moveNote={moveNote}
+              moveNote={(dragIndex, hoverIndex) => {
+                const updatedNotes = [...notes];
+                const [draggedNote] = updatedNotes.splice(dragIndex, 1);
+                updatedNotes.splice(hoverIndex, 0, draggedNote);
+                setNotes(updatedNotes);
+              }}
             />
           ))}
         </div>

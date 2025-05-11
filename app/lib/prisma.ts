@@ -47,7 +47,7 @@ export async function createNote(formData: FormData) {
         },
       },
     });
-    // revalidatePath("/home");
+     revalidatePath("/z/home");
     return note;
   } catch (error) {
     console.log("Error creating note:", error);
