@@ -1,3 +1,5 @@
+
+
 "use client";
 
 import { useRef, useEffect, useState } from "react";
@@ -20,7 +22,22 @@ import SkeletonLoader from "@/app/ui/skeleton";
 import { MapPinIcon } from "@heroicons/react/24/outline";
 import { DndProvider, useDrag, useDrop } from "react-dnd";
 import { TouchBackend } from "react-dnd-touch-backend";
-
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 interface Note {
   id: string;
   title?: string;
@@ -226,79 +243,33 @@ function NoteCard({ onClose }: { onClose: () => void }) {
   );
 }
 
-interface DraggableNoteProps {
-  note: Note;
-  index: number;
-  moveNote: (dragIndex: number, hoverIndex: number) => void;
-}
 
-function DraggableNote({ note, index, moveNote }: DraggableNoteProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [isLongPress, setIsLongPress] = useState(false);
+function SortableNote({ note }: { note: Note }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: note.id });
 
-  const [, drop] = useDrop({
-    accept: "note",
-    hover: (item: { index: number }) => {
-      if (!ref.current) return;
-
-      const dragIndex = item.index;
-      const hoverIndex = index;
-
-      if (dragIndex === hoverIndex) return;
-
-      moveNote(dragIndex, hoverIndex);
-      item.index = hoverIndex;
-    },
-    drop: (item: { index: number }) => {
-      const dragIndex = item.index;
-      const hoverIndex = index;
-
-      if (dragIndex !== hoverIndex) {
-        moveNote(dragIndex, hoverIndex);
-      }
-    },
-  });
-
-  const [{ isDragging }, drag] = useDrag({
-    type: "note",
-    item: { index },
-    collect: (monitor) => ({
-      isDragging: monitor.isDragging(),
-    }),
-  });
-
-  const handleLongPressStart = () => {
-    setIsLongPress(true);
+ 
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
   };
 
-  const handleLongPressEnd = () => {
-    setIsLongPress(false);
-  };
-
-  drag(drop(ref));
-
+  const className = `p-4 border select-none text-white pt-9 border-gray-300 rounded-md side-nav md:w-48 lg:w-48 text-center break-inside-avoid mb-4 bg-gray-900 ${
+    isDragging ? "opacity-50  border-dashed border-blue-500 scale-105 shadow-lg" : "opacity-100"
+  }`;
   return (
-    <div
-      ref={ref}
-      onMouseDown={(e) => e.preventDefault()} // Prevent text selection on drag
-      onTouchStart={() => setTimeout(handleLongPressStart, 500)} // Trigger long press after 500ms
-      onTouchEnd={handleLongPressEnd} // Reset long press state on touch end
-      className={`p-4 border text-white pt-9 border-gray-300 rounded-md side-nav md:w-48 lg:w-48 text-center break-inside-avoid mb-4 bg-gray-900 ${
-        isDragging
-          ? "opacity-50 border-dashed border-blue-500 scale-105 shadow-lg"
-          : isLongPress
-          ? "border-dashed border-yellow-500"
-          : "opacity-100"
-      }`}
-    >
-      <div>
-        <h3 className="text-lg font-semibold">{note.title}</h3>
-        <p className="text-sm text-gray-600">{note.content}</p>
-      </div>
+    <div ref={setNodeRef} style={style} className={className} {...attributes} {...listeners}>
+      <h3 className="text-lg font-semibold">{note.title}</h3>
+      <p className="text-sm text-gray-300">{note.content}</p>
     </div>
   );
 }
-
 // Main Page Component
 export default function Page() {
   const [noteInput, setNoteInput] = useState("");
@@ -307,6 +278,32 @@ export default function Page() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { data: session, status } = useSession();
+
+ const sensors = useSensors(
+  useSensor(PointerSensor, {
+    activationConstraint: {
+      delay: 250,
+      tolerance: 5,
+    },
+  }),
+  useSensor(TouchSensor, {
+    activationConstraint: {
+      delay: 250,
+      tolerance: 5,
+    },
+  })
+);
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      if (notes) {
+        const oldIndex = notes.findIndex((n) => n.id === active.id);
+        const newIndex = notes.findIndex((n) => n.id === over?.id);
+        setNotes(arrayMove(notes, oldIndex, newIndex));
+      }
+    }
+  };
 
   useEffect(() => {
     async function fetchNotes() {
@@ -340,7 +337,12 @@ export default function Page() {
   }
 
   return (
-    <DndProvider backend={TouchBackend} options={{ enableMouseEvents: true }}>
+    <DndContext
+     sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+        > 
+
       <div className="flex flex-col items-center lg:items-center mt-9">
         <input
           type="text"
@@ -355,22 +357,19 @@ export default function Page() {
 
         {showNoteCard && <NoteCard onClose={() => setShowNoteCard(false)} />}
 
-        <div className="columns-1 md:columns-2 lg:columns-5 media-coloumn">
-          {notes?.map((note, index) => (
-            <DraggableNote
-              key={note.id}
-              note={note}
-              index={index}
-              moveNote={(dragIndex, hoverIndex) => {
-                const updatedNotes = [...notes];
-                const [draggedNote] = updatedNotes.splice(dragIndex, 1);
-                updatedNotes.splice(hoverIndex, 0, draggedNote);
-                setNotes(updatedNotes);
-              }}
-            />
-          ))}
-        </div>
+                <SortableContext
+          items={notes ? notes.map((note) => note.id) : []}
+          strategy={verticalListSortingStrategy}
+        >
+          <div className="columns-1 md:columns-2 lg:columns-5 media-coloumn">
+            {notes?.map((note) => (
+              <SortableNote key={note.id} note={note} />
+            ))}
+          </div>
+        </SortableContext>
       </div>
-    </DndProvider>
+
+    </DndContext>
+  
   );
 }
