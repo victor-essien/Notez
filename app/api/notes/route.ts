@@ -10,9 +10,6 @@ export async function GET() {
   
   } catch (error) {
     console.error("API error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch notes" },
-      { status: 500 }
-    );
+   
   }
 }

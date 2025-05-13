@@ -36,6 +36,7 @@ import {
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
+  rectSortingStrategy
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 interface Note {
@@ -244,32 +245,7 @@ function NoteCard({ onClose }: { onClose: () => void }) {
 }
 
 
-function SortableNote({ note }: { note: Note }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: note.id });
 
- 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
-
-  const className = `p-4 border select-none text-white pt-9 border-gray-300 rounded-md side-nav md:w-48 lg:w-48 text-center break-inside-avoid mb-4 bg-gray-900 ${
-    isDragging ? "opacity-50  border-dashed border-blue-500 scale-105 shadow-lg" : "opacity-100"
-  }`;
-  return (
-    <div ref={setNodeRef} style={style} className={className} {...attributes} {...listeners}>
-      <h3 className="text-lg font-semibold">{note.title}</h3>
-      <p className="text-sm text-gray-300">{note.content}</p>
-    </div>
-  );
-}
 // Main Page Component
 export default function Page() {
   const [noteInput, setNoteInput] = useState("");
@@ -279,6 +255,71 @@ export default function Page() {
   const [error, setError] = useState<string | null>(null);
   const { data: session, status } = useSession();
 
+ function SortableNote({ note }: { note: Note }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: note.id });
+  const [isLongPress, setIsLongPress] = useState(false);
+  
+
+  const [draggingStarted, setDraggingStarted] = useState(false);
+  const longPressTimeout = useRef<NodeJS.Timeout | null>(null);
+
+  const handleTouchStart = () => {
+    longPressTimeout.current = setTimeout(() => {
+      setIsLongPress(true);
+    }, 300); // 300ms long press
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimeout.current) clearTimeout(longPressTimeout.current);
+   
+    if(!draggingStarted){
+      setIsLongPress(false);
+    }
+    
+  };
+
+  // Track drag status
+  
+
+
+ 
+ 
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+     zIndex: isDragging ? 999 : "auto",
+  position: isDragging ? "relative" : "static",
+    touchAction: isDragging   ? "pan-y" : "pan-y",
+  };
+console.log("Is dragginh", isDragging)
+// console.log("Is Long Press", isLongPress)
+//  console.log('style', style.touchAction)
+
+ 
+  const className = `p-4 border select-none text-white pt-9 border-gray-300 rounded-md side-nav md:w-48 lg:w-48 text-center break-inside-avoid mb-4 bg-gray-900 ${
+    isDragging ? "opacity-50  border-dashed border-blue-500 scale-105 shadow-lg" : "opacity-100"
+  }`;
+  return (
+    <div ref={setNodeRef} style={style} className={className} {...attributes} {...listeners}
+    onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchEnd}
+      >
+      <h3 className="text-lg font-semibold">{note.title}</h3>
+      <p className="text-sm text-gray-300">{note.content}</p>
+    </div>
+  );
+}
+ 
+ 
+  console.log("hahah");
  const sensors = useSensors(
   useSensor(PointerSensor, {
     activationConstraint: {
@@ -288,14 +329,17 @@ export default function Page() {
   }),
   useSensor(TouchSensor, {
     activationConstraint: {
-      delay: 250,
-      tolerance: 5,
+      delay: 300,
+      tolerance: 10,
     },
   })
 );
 
+console.log('sensot', sensors)
   const handleDragEnd = (event: DragEndEvent) => {
+    console.log('Activatedddd')
     const { active, over } = event;
+    console.log("Drag Ended:", { active, over });
     if (active.id !== over?.id) {
       if (notes) {
         const oldIndex = notes.findIndex((n) => n.id === active.id);
@@ -304,6 +348,7 @@ export default function Page() {
       }
     }
   };
+  
 
   useEffect(() => {
     async function fetchNotes() {
